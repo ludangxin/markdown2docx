@@ -1,6 +1,7 @@
 package md2docx;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,7 @@ import java.util.Map;
  * @author ludangxin
  * @since 2025/11/4
  */
+@Slf4j
 public class DocxTest {
     private static final File TEMPLATE_FILE = new File("demo.docx");
     private static final File OUTPUT_FILE = new File("output.docx");

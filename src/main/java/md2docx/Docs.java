@@ -6,10 +6,12 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.docx4j.convert.in.xhtml.FormattingOption;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.Body;
+import org.docx4j.wml.RFonts;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,6 +78,8 @@ public class Docs {
         private boolean useHtmlDefaultStyle = true;
 
         private boolean autoCloseStream = true;
+
+        private final Map<String, String> fontMapping = new HashMap<>();
 
         private String globalCss = "table{border-collapse:collapse;border-spacing:0;width:100%;margin:1em 0;background-color:transparent;}table th{background-color:#f7f7f7;border:1px solid #ddd;padding:8px 12px;text-align:left}table td{border:1px solid #ddd;padding:8px 12px}";
 
@@ -145,6 +150,16 @@ public class Docs {
 
         public DocBuilder htmlContentProcessor(BiFunction<String, String, String> htmlContentProcessor) {
             this.htmlContentProcessor = htmlContentProcessor;
+            return this;
+        }
+
+        public DocBuilder fontMapping(Map<String, String> fontMapping) {
+            this.fontMapping.putAll(fontMapping);
+            return this;
+        }
+
+        public DocBuilder fontMapping(String cssFontFamily, String docFontName) {
+            this.fontMapping.put(cssFontFamily, docFontName);
             return this;
         }
 
@@ -405,6 +420,7 @@ public class Docs {
         }
 
         private XHTMLImporterImpl getImporterOrDefault() {
+            XHTMLImporterImpl importerResult;
             if (importer == null) {
                 if (paragraphFormatting != null || runFormatting != null || tableFormatting != null) {
                     XHTMLImporterImpl importer = new XHTMLImporterImpl(wordMLPackage);
@@ -412,15 +428,28 @@ public class Docs {
                     importer.setRunFormatting(runFormatting == null ? FormattingOption.CLASS_PLUS_OTHER : runFormatting);
                     importer.setTableFormatting(tableFormatting == null ? FormattingOption.CLASS_PLUS_OTHER : tableFormatting);
 
-                    return importer;
+                    importerResult =  importer;
                 }
                 else {
-                    return this.defaultImporter();
+                    importerResult = this.defaultImporter();
                 }
             }
             else {
-                return this.importer;
+                importerResult = this.importer;
             }
+
+            if (!fontMapping.isEmpty()) {
+                fontMapping.forEach((cssFont, docFont) -> {
+                    RFonts rfonts = Context.getWmlObjectFactory()
+                                           .createRFonts();
+                    rfonts.setAscii(docFont);
+                    rfonts.setHAnsi(docFont);
+                    rfonts.setCs(docFont);
+                    XHTMLImporterImpl.addFontMapping(cssFont, rfonts);
+                });
+            }
+
+            return importerResult;
         }
 
         private Configure getTemplateEngineConfigureOrDefault() {
