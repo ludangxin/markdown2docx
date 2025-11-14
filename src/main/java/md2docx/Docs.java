@@ -445,6 +445,7 @@ public class Docs {
                     rfonts.setAscii(docFont);
                     rfonts.setHAnsi(docFont);
                     rfonts.setCs(docFont);
+                    rfonts.setEastAsia(docFont);
                     XHTMLImporterImpl.addFontMapping(cssFont, rfonts);
                 });
             }
