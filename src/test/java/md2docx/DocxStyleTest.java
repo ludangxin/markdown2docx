@@ -5,6 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.in.xhtml.FormattingOption;
 import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.fonts.BestMatchingMapper;
+import org.docx4j.fonts.IdentityPlusMapper;
+import org.docx4j.fonts.Mapper;
+import org.docx4j.fonts.PhysicalFont;
+import org.docx4j.fonts.PhysicalFonts;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.FontTablePart;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
@@ -14,6 +19,7 @@ import org.docx4j.wml.Style;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.awt.*;
 import java.io.File;
 import java.util.List;
 
@@ -97,12 +103,32 @@ public class DocxStyleTest {
     }
 
     @Test
-    public void given_doc_template_and_html_when_generate_docx_then_complete() {
-        String html = "<p style=\"text-indent: 32pt;\"><span style=\"font-family: 黑体;\">三、相关公司基本情况</span></p>\n" + "<p style=\"text-indent: 32pt;\"><span style=\"font-family: 楷体;\">(一)xxx</span></p>";
+    public void print_font_meta_info() throws Exception {
+        // 读取本地 ttf 文件
+        Font font = Font.createFont(Font.TRUETYPE_FONT, new File("/Users/ludangxin/Library/Fonts/楷体_GB2312.TTF"));
+        System.out.println("Font Name: " + font.getFontName());
+        System.out.println("Family Name: " + font.getFamily());
+        // font identity name, mapping doc font name
+        System.out.println("PS Name: " + font.getPSName());
+}
 
-        Docs.builder()
-            .fontMapping("黑体", "sans-serif")
-            .fontMapping("楷体", "楷体")
-            .buildWord(html, new File("output3.docx"));
+
+    @Test
+    public void given_html_and_font_mapping_when_generate_docx_then_complete() {
+        String html = "<p style=\"text-indent: 32pt;\"><span style=\"font-family: 黑体;\">三、相关公司基本情况</span></p>\n" + "<p style=\"text-indent: 32pt;\"><span style=\"font-family: 楷体;\">(一)xxx</span></p>";
+        // 注册css font-family 和 docx font name 映射关系
+        DocsGlobalConfig.registerFontMapping("黑体", "黑体");
+        DocsGlobalConfig.registerFontMapping("楷体", "楷体");
+
+        Docs.builder().buildWord(html, new File("output3.docx"));
     }
+
+    @Test
+    public void given_html_and_custom_font_when_generate_docx_then_complete2() {
+        String html = "<p style=\"text-indent: 32pt;\"><span style=\"font-family: 黑体;\">三、相关公司基本情况</span></p>\n" + "<p style=\"text-indent: 32pt;\"><span style=\"font-family: 楷体;\">(一)xxx</span></p>";
+        String fontPath = "/Users/ludangxin/Library/Fonts/楷体_GB2312.TTF";
+        DocsGlobalConfig.registerPhysicalFontMapping("黑体", "黑体aaa", fontPath);
+        Docs.builder().buildWord(html, new File("output4.docx"));
+    }
+
 }
